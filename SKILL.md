@@ -23,19 +23,19 @@ List live Singapore internet radio stations, open a selected stream locally, and
 Run the helper:
 
 ```bash
-python3 /home/dreamtcs/.codex/skills/openclaw-singapore-radio/scripts/singapore_radio.py list --all
+python3 /home/dreamtcs/openclaw-skills/openclaw-singapore-radio/scripts/singapore_radio.py list --all
 ```
 
 Filter by station name:
 
 ```bash
-python3 /home/dreamtcs/.codex/skills/openclaw-singapore-radio/scripts/singapore_radio.py list --query "cna"
+python3 /home/dreamtcs/openclaw-skills/openclaw-singapore-radio/scripts/singapore_radio.py list --query "cna"
 ```
 
 Filter by language:
 
 ```bash
-python3 /home/dreamtcs/.codex/skills/openclaw-singapore-radio/scripts/singapore_radio.py list --language english
+python3 /home/dreamtcs/openclaw-skills/openclaw-singapore-radio/scripts/singapore_radio.py list --language english
 ```
 
 Use `--format json` when you want machine-readable results before summarizing.
@@ -43,7 +43,7 @@ Use `--format json` when you want machine-readable results before summarizing.
 For Telegram or WhatsApp list replies:
 
 ```bash
-python3 /home/dreamtcs/.codex/skills/openclaw-singapore-radio/scripts/singapore_radio.py list --chat --limit 4 --web-base-url "https://yourdomain/radio"
+python3 /home/dreamtcs/openclaw-skills/openclaw-singapore-radio/scripts/singapore_radio.py list --chat --limit 4 --web-base-url "https://yourdomain/radio"
 ```
 
 Rules:
@@ -59,19 +59,19 @@ Rules:
 Play an exact station:
 
 ```bash
-python3 /home/dreamtcs/.codex/skills/openclaw-singapore-radio/scripts/singapore_radio.py play "YES 933 Radio"
+python3 /home/dreamtcs/openclaw-skills/openclaw-singapore-radio/scripts/singapore_radio.py play "YES 933 Radio"
 ```
 
 Preview the chosen stream URL without launching anything:
 
 ```bash
-python3 /home/dreamtcs/.codex/skills/openclaw-singapore-radio/scripts/singapore_radio.py play "YES 933 Radio" --url-only
+python3 /home/dreamtcs/openclaw-skills/openclaw-singapore-radio/scripts/singapore_radio.py play "YES 933 Radio" --url-only
 ```
 
 Format a chat-friendly launch reply with a browser player link:
 
 ```bash
-python3 /home/dreamtcs/.codex/skills/openclaw-singapore-radio/scripts/singapore_radio.py play "YES 933 Radio" --chat --web-base-url "https://yourdomain/radio"
+python3 /home/dreamtcs/openclaw-skills/openclaw-singapore-radio/scripts/singapore_radio.py play "YES 933 Radio" --chat --web-base-url "https://yourdomain/radio"
 ```
 
 Rules:
