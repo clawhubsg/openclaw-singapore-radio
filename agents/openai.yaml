@@ -1,0 +1,4 @@
+interface:
+  display_name: "Singapore Radio Browser"
+  short_description: "List and play Singapore radio"
+  default_prompt: "Use $openclaw-singapore-radio to list live Singapore internet radio stations or play one of their streams."
