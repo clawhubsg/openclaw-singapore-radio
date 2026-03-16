@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -20,6 +22,7 @@ REQUEST_TIMEOUT_SECONDS = 30
 MAX_RETRIES = 3
 USER_AGENT = "openclaw-singapore-radio/1.0"
 PLAYER_ORDER = ("mpv", "vlc", "ffplay", "mplayer", "mpg123", "xdg-open", "open")
+DEFAULT_CHAT_LIMIT = 4
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,6 +49,15 @@ def parse_args() -> argparse.Namespace:
         choices=("text", "json"),
         default="text",
         help="Output format.",
+    )
+    list_parser.add_argument(
+        "--chat",
+        action="store_true",
+        help="Render a Telegram/WhatsApp-friendly list reply.",
+    )
+    list_parser.add_argument(
+        "--web-base-url",
+        help="Base HTTPS player URL, for example https://example.com/radio.",
     )
 
     play_parser = subparsers.add_parser("play", help="Play one Singapore station.")
@@ -75,6 +87,15 @@ def parse_args() -> argparse.Namespace:
         choices=("text", "json"),
         default="text",
         help="Output format.",
+    )
+    play_parser.add_argument(
+        "--chat",
+        action="store_true",
+        help="Render a Telegram/WhatsApp-friendly station reply.",
+    )
+    play_parser.add_argument(
+        "--web-base-url",
+        help="Base HTTPS player URL, for example https://example.com/radio.",
     )
 
     return parser.parse_args()
@@ -202,6 +223,76 @@ def render_station_line(index: int, station: dict[str, Any]) -> str:
     )
 
 
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "station"
+
+
+def resolve_web_base_url(explicit_base_url: str | None) -> str | None:
+    base_url = explicit_base_url or os.environ.get("OPENCLAW_RADIO_PLAYER_BASE_URL")
+    if not base_url:
+        return None
+    return base_url.rstrip("/")
+
+
+def build_web_player_url(base_url: str | None, station: dict[str, Any]) -> str | None:
+    if not base_url:
+        return None
+    encoded_stream = urllib.parse.quote(station["url"], safe="")
+    return f"{base_url}/{slugify(station['name'])}?stream={encoded_stream}"
+
+
+def station_title(station: dict[str, Any]) -> str:
+    language = station["language"] or station["languagecodes"] or "unknown language"
+    bitrate = f"{station['bitrate']} kbps" if station["bitrate"] else "bitrate unknown"
+    return f"{station['name']} | {language} | {station['codec']} | {bitrate}"
+
+
+def render_chat_list(
+    stations: list[dict[str, Any]],
+    web_base_url: str | None,
+    query: str | None,
+    language: str | None,
+    tag: str | None,
+) -> str:
+    heading = "Singapore radio"
+    filters = [value for value in (query, language, tag) if value]
+    if filters:
+        heading = f"{heading} ({', '.join(filters)})"
+
+    lines = [heading]
+    for index, station in enumerate(stations, start=1):
+        lines.append(f"{index}. {station['name']}")
+
+    lines.append("")
+    lines.append("Reply:")
+    lines.append("- play 1")
+    lines.append("- search tamil")
+    if len(stations) >= DEFAULT_CHAT_LIMIT:
+        lines.append("- more")
+
+    if web_base_url:
+        lines.append("")
+        lines.append("Open now:")
+        for index, station in enumerate(stations, start=1):
+            player_url = build_web_player_url(web_base_url, station)
+            lines.append(f"{index}. {player_url}")
+
+    lines.append("")
+    lines.append("Checked live from the Singapore station directory.")
+    return "\n".join(lines)
+
+
+def render_chat_station(station: dict[str, Any], web_base_url: str | None) -> str:
+    lines = [station["name"], station_title(station)]
+    player_url = build_web_player_url(web_base_url, station)
+    if player_url:
+        lines.append(f"Open player: {player_url}")
+    lines.append(f"Direct stream: {station['url']}")
+    lines.append("Use the player link on Android, iPhone, or desktop browser.")
+    return "\n".join(lines)
+
+
 def command_for_player(player: str, url: str) -> list[str]:
     if player == "ffplay":
         return [player, "-loglevel", "warning", url]
@@ -280,6 +371,18 @@ def handle_list(args: argparse.Namespace) -> int:
         print("No matching Singapore stations found.")
         return 0
 
+    if args.chat:
+        print(
+            render_chat_list(
+                stations,
+                resolve_web_base_url(args.web_base_url),
+                args.query,
+                args.language,
+                args.tag,
+            )
+        )
+        return 0
+
     print(f"Singapore stations: {len(stations)}")
     for index, station in enumerate(stations, start=1):
         print(render_station_line(index, station))
@@ -295,6 +398,7 @@ def handle_play(args: argparse.Namespace) -> int:
 
     station = choose_station(matches, args.station, args.index)
     result: dict[str, Any] = {"station": station}
+    web_base_url = resolve_web_base_url(args.web_base_url)
 
     if args.url_only:
         result["mode"] = "url-only"
@@ -302,6 +406,16 @@ def handle_play(args: argparse.Namespace) -> int:
             print(json.dumps(result, indent=2))
         else:
             print(station["url"])
+        return 0
+
+    if args.chat:
+        result["mode"] = "chat"
+        if web_base_url:
+            result["player_url"] = build_web_player_url(web_base_url, station)
+        if args.format == "json":
+            print(json.dumps(result, indent=2))
+        else:
+            print(render_chat_station(station, web_base_url))
         return 0
 
     player = pick_player(args.player)

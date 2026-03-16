@@ -29,3 +29,15 @@ The helper tries to launch a local player or opener in this order:
 7. `open`
 
 If none are available, use `--url-only` and return the stream URL.
+
+## Browser player links
+
+- For Telegram, WhatsApp, and desktop-chat users, prefer a normal HTTPS browser player URL.
+- The helper can generate these links with `--web-base-url` or `OPENCLAW_RADIO_PLAYER_BASE_URL`.
+- The generated link format is:
+
+```text
+https://yourdomain/radio/<station-slug>?stream=<urlencoded-stream-url>
+```
+
+- Use the browser player link first and the direct stream URL second.
